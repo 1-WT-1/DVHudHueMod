@@ -1,0 +1,123 @@
+[mod_information]
+
+id="wt.DVHudHueMod"
+name="DVHudHueMod"
+description="DVHUDHUEMOD_MOD_DESCRIPTION"
+brief="DVHUDHUEMOD_MOD_BRIEF"
+author="WT"
+credits=["kymurk - idea"]
+
+[version]
+
+version_major=0
+version_minor=1
+version_bugfix=0
+
+[tags]
+
+TAG_VISUAL={"type":"bool","value":true}
+TAG_HUD={"type":"bool","value":true}
+
+[configs]
+
+DVHUDHUE_OPTIONS={
+	"color_space":{
+		"name":"DVHUDHUE_COLOR_SPACE_NAME",
+		"description":"DVHUDHUE_COLOR_SPACE_DESC",
+		"type":"option_button",
+		"store_method":"string",
+		"options":["HSV", "OKLCH"],
+		"default":"HSV"
+	},
+	"r_lightness":{
+		"name":"DVHUDHUE_R_LIGHTNESS_NAME",
+		"description":"DVHUDHUE_R_LIGHTNESS_DESC",
+		"type":"float",
+		"min":0.0,
+		"max":2.0,
+		"step":0.05,
+		"default":1.0
+	},
+	"r_chroma":{
+		"name":"DVHUDHUE_R_CHROMA_NAME",
+		"description":"DVHUDHUE_R_CHROMA_DESC",
+		"type":"float",
+		"min":0.0,
+		"max":2.0,
+		"step":0.05,
+		"default":1.0
+	},
+	"r_hue":{
+		"name":"DVHUDHUE_R_HUE_NAME",
+		"description":"DVHUDHUE_R_HUE_DESC",
+		"type":"float",
+		"min":-180.0,
+		"max":180.0,
+		"step":1.0,
+		"default":0.0
+	},
+	"g_lightness":{
+		"name":"DVHUDHUE_G_LIGHTNESS_NAME",
+		"description":"DVHUDHUE_G_LIGHTNESS_DESC",
+		"type":"float",
+		"min":0.0,
+		"max":2.0,
+		"step":0.05,
+		"default":1.0
+	},
+	"g_chroma":{
+		"name":"DVHUDHUE_G_CHROMA_NAME",
+		"description":"DVHUDHUE_G_CHROMA_DESC",
+		"type":"float",
+		"min":0.0,
+		"max":2.0,
+		"step":0.05,
+		"default":1.0
+	},
+	"g_hue":{
+		"name":"DVHUDHUE_G_HUE_NAME",
+		"description":"DVHUDHUE_G_HUE_DESC",
+		"type":"float",
+		"min":-180.0,
+		"max":180.0,
+		"step":1.0,
+		"default":0.0
+	},
+	"b_lightness":{
+		"name":"DVHUDHUE_B_LIGHTNESS_NAME",
+		"description":"DVHUDHUE_B_LIGHTNESS_DESC",
+		"type":"float",
+		"min":0.0,
+		"max":2.0,
+		"step":0.05,
+		"default":1.0
+	},
+	"b_chroma":{
+		"name":"DVHUDHUE_B_CHROMA_NAME",
+		"description":"DVHUDHUE_B_CHROMA_DESC",
+		"type":"float",
+		"min":0.0,
+		"max":2.0,
+		"step":0.05,
+		"default":1.0
+	},
+	"b_hue":{
+		"name":"DVHUDHUE_B_HUE_NAME",
+		"description":"DVHUDHUE_B_HUE_DESC",
+		"type":"float",
+		"min":-180.0,
+		"max":180.0,
+		"step":1.0,
+		"default":0.0
+	}
+}
+
+[links]
+HEVLIB_GITHUB={"URL":"https://github.com/1-WT-1/DVHudHueMod"}
+
+[manifest_definitions]
+
+manifest_version=2.2
+manifest_url="https://raw.githubusercontent.com/1-WT-1/DVHudHueMod/main/Mod.manifest"
+changelog_path="changelog.txt"
+modlet_priority=0

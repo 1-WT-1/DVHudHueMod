@@ -1,0 +1,6 @@
+;MOD_ID|wt.DVHudHueMod
+;MOD_NAME|DVHudHueMod
+;MOD_ZIP_NAME|DVHudHueMod.zip
+
+[center][b]DVHudHueMod[/b][/center]
+Grants options to independently modify LCh (Lightness, Chroma, Hue) parameters of the RGB channels in HUD/UI.
