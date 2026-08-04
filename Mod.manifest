@@ -9,8 +9,8 @@ credits=["kymurk - idea"]
 
 [version]
 
-version_major=0
-version_minor=1
+version_major=1
+version_minor=0
 version_bugfix=0
 
 [tags]
@@ -26,8 +26,52 @@ DVHUDHUE_OPTIONS={
 		"description":"DVHUDHUE_COLOR_SPACE_DESC",
 		"type":"option_button",
 		"store_method":"string",
-		"options":["HSV", "OKLCH"],
+		"options":["HSV", "HSL", "OKHSV", "OKHSL", "OKLCH"],
 		"default":"HSV"
+	},
+	"overlap":{
+		"name":"DVHUDHUE_OVERLAP_NAME",
+		"description":"DVHUDHUE_OVERLAP_DESC",
+		"type":"float",
+		"min":0.0,
+		"max":100.0,
+		"step":1.0,
+		"default":0.0
+	},
+	"lightness_mode":{
+		"name":"DVHUDHUE_LIGHTNESS_MODE_NAME",
+		"description":"DVHUDHUE_LIGHTNESS_MODE_DESC",
+		"type":"option_button",
+		"store_method":"string",
+		"options":["HDR Multiplier", "GIMP Clamp"],
+		"default":"HDR Multiplier"
+	},
+	"master_lightness":{
+		"name":"DVHUDHUE_MASTER_LIGHTNESS_NAME",
+		"description":"DVHUDHUE_MASTER_LIGHTNESS_DESC",
+		"type":"float",
+		"min":0.0,
+		"max":2.0,
+		"step":0.05,
+		"default":1.0
+	},
+	"master_chroma":{
+		"name":"DVHUDHUE_MASTER_CHROMA_NAME",
+		"description":"DVHUDHUE_MASTER_CHROMA_DESC",
+		"type":"float",
+		"min":0.0,
+		"max":2.0,
+		"step":0.05,
+		"default":1.0
+	},
+	"master_hue":{
+		"name":"DVHUDHUE_MASTER_HUE_NAME",
+		"description":"DVHUDHUE_MASTER_HUE_DESC",
+		"type":"float",
+		"min":-180.0,
+		"max":180.0,
+		"step":1.0,
+		"default":0.0
 	},
 	"r_lightness":{
 		"name":"DVHUDHUE_R_LIGHTNESS_NAME",
@@ -50,6 +94,33 @@ DVHUDHUE_OPTIONS={
 	"r_hue":{
 		"name":"DVHUDHUE_R_HUE_NAME",
 		"description":"DVHUDHUE_R_HUE_DESC",
+		"type":"float",
+		"min":-180.0,
+		"max":180.0,
+		"step":1.0,
+		"default":0.0
+	},
+	"y_lightness":{
+		"name":"DVHUDHUE_Y_LIGHTNESS_NAME",
+		"description":"DVHUDHUE_Y_LIGHTNESS_DESC",
+		"type":"float",
+		"min":0.0,
+		"max":2.0,
+		"step":0.05,
+		"default":1.0
+	},
+	"y_chroma":{
+		"name":"DVHUDHUE_Y_CHROMA_NAME",
+		"description":"DVHUDHUE_Y_CHROMA_DESC",
+		"type":"float",
+		"min":0.0,
+		"max":2.0,
+		"step":0.05,
+		"default":1.0
+	},
+	"y_hue":{
+		"name":"DVHUDHUE_Y_HUE_NAME",
+		"description":"DVHUDHUE_Y_HUE_DESC",
 		"type":"float",
 		"min":-180.0,
 		"max":180.0,
@@ -83,6 +154,33 @@ DVHUDHUE_OPTIONS={
 		"step":1.0,
 		"default":0.0
 	},
+	"c_lightness":{
+		"name":"DVHUDHUE_C_LIGHTNESS_NAME",
+		"description":"DVHUDHUE_C_LIGHTNESS_DESC",
+		"type":"float",
+		"min":0.0,
+		"max":2.0,
+		"step":0.05,
+		"default":1.0
+	},
+	"c_chroma":{
+		"name":"DVHUDHUE_C_CHROMA_NAME",
+		"description":"DVHUDHUE_C_CHROMA_DESC",
+		"type":"float",
+		"min":0.0,
+		"max":2.0,
+		"step":0.05,
+		"default":1.0
+	},
+	"c_hue":{
+		"name":"DVHUDHUE_C_HUE_NAME",
+		"description":"DVHUDHUE_C_HUE_DESC",
+		"type":"float",
+		"min":-180.0,
+		"max":180.0,
+		"step":1.0,
+		"default":0.0
+	},
 	"b_lightness":{
 		"name":"DVHUDHUE_B_LIGHTNESS_NAME",
 		"description":"DVHUDHUE_B_LIGHTNESS_DESC",
@@ -104,6 +202,33 @@ DVHUDHUE_OPTIONS={
 	"b_hue":{
 		"name":"DVHUDHUE_B_HUE_NAME",
 		"description":"DVHUDHUE_B_HUE_DESC",
+		"type":"float",
+		"min":-180.0,
+		"max":180.0,
+		"step":1.0,
+		"default":0.0
+	},
+	"m_lightness":{
+		"name":"DVHUDHUE_M_LIGHTNESS_NAME",
+		"description":"DVHUDHUE_M_LIGHTNESS_DESC",
+		"type":"float",
+		"min":0.0,
+		"max":2.0,
+		"step":0.05,
+		"default":1.0
+	},
+	"m_chroma":{
+		"name":"DVHUDHUE_M_CHROMA_NAME",
+		"description":"DVHUDHUE_M_CHROMA_DESC",
+		"type":"float",
+		"min":0.0,
+		"max":2.0,
+		"step":0.05,
+		"default":1.0
+	},
+	"m_hue":{
+		"name":"DVHUDHUE_M_HUE_NAME",
+		"description":"DVHUDHUE_M_HUE_DESC",
 		"type":"float",
 		"min":-180.0,
 		"max":180.0,

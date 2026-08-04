@@ -1,2 +1,9 @@
+[1.0.0]
+1="* Optimized mod for better performance"
+2="* Fixed OKLCh color space calculations by properly converting sRGB to Linear RGB."
+3="* Refactored RGB system into GIMP-style controls (Master, R, Y, G, C, B, M)"
+4="* Added GIMP-style Overlap slider for smooth blending."
+5="* Added HSL, OKHSV, OKHSL color spaces"
+
 [0.1.0]
 1="* Initial release"

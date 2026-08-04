@@ -2,7 +2,7 @@ extends Reference
 
 const ColorUtils = preload("res://DVHudHueMod/scripts/ColorUtils.gd")
 
-const EXCLUDED_NODE_NAMES = [
+const EXCLUDED_NODE_NAMES: Array = [
 	"ClassicMode",
 	"Distortion",
 	"CRT",
@@ -14,114 +14,174 @@ const EXCLUDED_NODE_NAMES = [
 	"Offset"
 ]
 
-static func apply_recolor(hud_root, basis_vectors):
+const TELESCOPE_NODE_NAMES: Array = [
+	"RingTelescopeView",
+	"Video",
+	"Offset",
+	"CustomViewportContainer",
+	"EnceladusFeed"
+]
+
+static func apply_recolor(hud_root: Node, shift_data: Dictionary) -> void:
 	if not hud_root or not is_instance_valid(hud_root):
 		return
-		
-	var v_r = basis_vectors.get("v_r", Vector3(1, 0, 0))
-	var v_g = basis_vectors.get("v_g", Vector3(0, 1, 0))
-	var v_b = basis_vectors.get("v_b", Vector3(0, 0, 1))
-	
-	var processed_resources = {}
-	var stats = {"nodes": 0, "themes": 0, "styleboxes": 0, "script_colors": 0}
-	_recolor_node_recursive(hud_root, v_r, v_g, v_b, processed_resources, stats)
 
-static func _recolor_node_recursive(node, v_r, v_g, v_b, processed, stats):
+	var current_hash: int = shift_data["hash"]
+	var global_processed: Dictionary = {}
+	if hud_root.has_meta("_global_processed_resources") and hud_root.has_meta("_last_shift_hash") and hud_root.get_meta("_last_shift_hash") == current_hash:
+		global_processed = hud_root.get_meta("_global_processed_resources")
+	else:
+		hud_root.set_meta("_global_processed_resources", global_processed)
+		hud_root.set_meta("_last_shift_hash", current_hash)
+
+	_recolor_node_recursive(hud_root, shift_data, global_processed, false, current_hash)
+
+static func _recolor_node_recursive(node: Node, shift_data: Dictionary, processed: Dictionary, is_inside_telescope: bool, current_hash: int) -> void:
 	if not node or not is_instance_valid(node):
 		return
-		
-	stats.nodes += 1
-		
-	if node is Control and node.theme:
-		_recolor_theme(node.theme, v_r, v_g, v_b, processed, stats)
-		
-	var is_inside_telescope_feed = false
-	var parent_check = node.get_parent()
-	while parent_check:
-		if parent_check.name in ["RingTelescopeView", "Video", "Offset", "CustomViewportContainer"]:
-			is_inside_telescope_feed = true
-			break
-		parent_check = parent_check.get_parent()
-		
-	var is_viewport_texture_rect = (node is TextureRect) and (node.texture is ViewportTexture)
-	if node.name == "TextureRect" and node.get_parent() and node.get_parent().name == "EnceladusFeed":
-		is_viewport_texture_rect = true
-		
-	if node is Label and node.has_color_override("font_color"):
-		var meta_key = "_orig_font_color_override"
-		if not node.has_meta(meta_key):
-			node.set_meta(meta_key, node.get_color("font_color"))
-		var orig_fc = node.get_meta(meta_key)
-		node.add_color_override("font_color", ColorUtils.recolor_color(orig_fc, v_r, v_g, v_b))
 
-	if node.get_script() and not is_inside_telescope_feed:
-		for p in node.get_property_list():
-			if (p.usage & PROPERTY_USAGE_SCRIPT_VARIABLE) and p.type == TYPE_COLOR and not p.name.begins_with("_"):
-				var prop_name = p.name
-				var val = node.get(prop_name)
-				if val is Color and val != Color(1, 1, 1, 1) and val != Color(0, 0, 0, 0):
-					var meta_key = "_orig_" + prop_name
-					if not node.has_meta(meta_key):
-						node.set_meta(meta_key, val)
-					var orig_c = node.get_meta(meta_key)
-					node.set(prop_name, ColorUtils.recolor_color(orig_c, v_r, v_g, v_b))
-					stats.script_colors += 1
-				
-	var is_excluded = is_inside_telescope_feed or is_viewport_texture_rect or (node.name in EXCLUDED_NODE_NAMES) or ("Viewport" in node.name) or (node is ViewportContainer)
-	if node is CanvasItem and not is_excluded:
-		if node.modulate != Color(1, 1, 1, 1):
-			if not node.has_meta("_orig_modulate"):
-				node.set_meta("_orig_modulate", node.modulate)
-			var orig_mod = node.get_meta("_orig_modulate")
-			node.modulate = ColorUtils.recolor_color(orig_mod, v_r, v_g, v_b)
+	if not is_inside_telescope and node.name in TELESCOPE_NODE_NAMES:
+		is_inside_telescope = true
+
+	var node_already_processed: bool = false
+	if node.has_meta("_last_processed_hash") and node.get_meta("_last_processed_hash") == current_hash:
+		node_already_processed = true
+	else:
+		node.set_meta("_last_processed_hash", current_hash)
+
+	if not node_already_processed:
+		if node is Control and node.theme:
+			_recolor_theme(node.theme, shift_data, processed)
+
+		var is_viewport_texture_rect: bool = (node is TextureRect) and (node.texture is ViewportTexture)
+		if node.name == "TextureRect" and is_inside_telescope:
+			is_viewport_texture_rect = true
+
+		if node is Label:
+			if node.has_color_override("font_color"):
+				var current_c = node.get_color("font_color")
+				if not node.has_meta("_orig_font_color_override"):
+					node.set_meta("_orig_font_color_override", current_c)
+				elif node.has_meta("_last_font_color_override"):
+					node.set_meta("_orig_font_color_override", ColorUtils.update_orig_color_if_needed(current_c, node.get_meta("_orig_font_color_override"), node.get_meta("_last_font_color_override")))
+				var shifted_c = ColorUtils.recolor_color(node.get_meta("_orig_font_color_override"), shift_data)
+				node.add_color_override("font_color", shifted_c)
+				node.set_meta("_last_font_color_override", shifted_c)
+
+			if node.has_color_override("font_color_shadow"):
+				var current_c = node.get_color("font_color_shadow")
+				if not node.has_meta("_orig_font_shadow_override"):
+					node.set_meta("_orig_font_shadow_override", current_c)
+				elif node.has_meta("_last_font_shadow_override"):
+					node.set_meta("_orig_font_shadow_override", ColorUtils.update_orig_color_if_needed(current_c, node.get_meta("_orig_font_shadow_override"), node.get_meta("_last_font_shadow_override")))
+				var shifted_c = ColorUtils.recolor_color(node.get_meta("_orig_font_shadow_override"), shift_data)
+				node.add_color_override("font_color_shadow", shifted_c)
+				node.set_meta("_last_font_shadow_override", shifted_c)
+
+		if node.get_script() and not is_inside_telescope:
+			var script_vars: Dictionary = {}
+			if node.has_meta("_orig_script_colors"):
+				script_vars = node.get_meta("_orig_script_colors")
 			
-		if node.self_modulate != Color(1, 1, 1, 1):
-			if not node.has_meta("_orig_self_modulate"):
-				node.set_meta("_orig_self_modulate", node.self_modulate)
-			var orig_self_mod = node.get_meta("_orig_self_modulate")
-			node.self_modulate = ColorUtils.recolor_color(orig_self_mod, v_r, v_g, v_b)
+			for p in node.get_property_list():
+				if (p.usage & (PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_EDITOR)) and p.type == TYPE_COLOR and not p.name.begins_with("_") and not p.name in ["modulate", "self_modulate", "color", "default_color"]:
+					var current_c = node.get(p.name)
+					if current_c is Color:
+						var meta_key = "_last_script_color_" + p.name
+						if not script_vars.has(p.name):
+							script_vars[p.name] = current_c
+						elif node.has_meta(meta_key):
+							script_vars[p.name] = ColorUtils.update_orig_color_if_needed(current_c, script_vars[p.name], node.get_meta(meta_key))
+			
+			node.set_meta("_orig_script_colors", script_vars)
 
-	for child in node.get_children():
-		_recolor_node_recursive(child, v_r, v_g, v_b, processed, stats)
+			for prop_name in script_vars:
+				var shifted_c = ColorUtils.recolor_color(script_vars[prop_name], shift_data)
+				node.set(prop_name, shifted_c)
+				node.set_meta("_last_script_color_" + prop_name, shifted_c)
 
-static func _recolor_theme(theme, v_r, v_g, v_b, processed, stats):
-	var res_id = theme.get_instance_id()
+		var is_excluded: bool = is_inside_telescope or is_viewport_texture_rect or (node.name in EXCLUDED_NODE_NAMES) or ("Viewport" in node.name) or (node is ViewportContainer)
+
+		if node.name == "Ship" and node is Sprite:
+			is_excluded = false
+
+		if node is CanvasItem and not is_excluded:
+			var mod = node.modulate
+			if mod != Color(1.0, 1.0, 1.0, 1.0) or node.has_meta("_orig_modulate"):
+				if not node.has_meta("_orig_modulate"):
+					node.set_meta("_orig_modulate", mod)
+				elif node.has_meta("_last_modulate"):
+					node.set_meta("_orig_modulate", ColorUtils.update_orig_color_if_needed(mod, node.get_meta("_orig_modulate"), node.get_meta("_last_modulate")))
+				var shifted_c = ColorUtils.recolor_color(node.get_meta("_orig_modulate"), shift_data)
+				node.modulate = shifted_c
+				node.set_meta("_last_modulate", shifted_c)
+
+			var self_mod = node.self_modulate
+			if self_mod != Color(1.0, 1.0, 1.0, 1.0) or node.has_meta("_orig_self_modulate"):
+				if not node.has_meta("_orig_self_modulate"):
+					node.set_meta("_orig_self_modulate", self_mod)
+				elif node.has_meta("_last_self_modulate"):
+					node.set_meta("_orig_self_modulate", ColorUtils.update_orig_color_if_needed(self_mod, node.get_meta("_orig_self_modulate"), node.get_meta("_last_self_modulate")))
+				var shifted_c = ColorUtils.recolor_color(node.get_meta("_orig_self_modulate"), shift_data)
+				node.self_modulate = shifted_c
+				node.set_meta("_last_self_modulate", shifted_c)
+
+	for i in range(node.get_child_count()):
+		var child = node.get_child(i)
+		if child is Timer or child is AnimationPlayer or child is Tween or child is AudioStreamPlayer or child is AudioStreamPlayer2D or child is AudioStreamPlayer3D:
+			continue
+
+		_recolor_node_recursive(child, shift_data, processed, is_inside_telescope, current_hash)
+
+static func _recolor_theme(theme: Theme, shift_data: Dictionary, processed: Dictionary) -> void:
+	var res_id: int = theme.get_instance_id()
 	if processed.has(res_id):
 		return
 	processed[res_id] = true
-	stats.themes += 1
-	
-	var color_types = theme.get_type_list("color")
+
+	var orig_colors: Dictionary = {}
+	if theme.has_meta("_orig_colors"):
+		orig_colors = theme.get_meta("_orig_colors")
+
+	var color_types: Array = theme.get_type_list("color")
 	for type_name in color_types:
-		for color_name in theme.get_color_list(type_name):
-			var meta_key = "_orig_col_" + type_name + "_" + color_name
-			if not theme.has_meta(meta_key):
-				theme.set_meta(meta_key, theme.get_color(color_name, type_name))
-			var orig_c = theme.get_meta(meta_key)
-			theme.set_color(color_name, type_name, ColorUtils.recolor_color(orig_c, v_r, v_g, v_b))
-			
-	var style_types = theme.get_type_list("stylebox")
+		var type_str: String = type_name
+		for color_name in theme.get_color_list(type_str):
+			var c_name: String = color_name
+			var dict_key: String = type_str + "|" + c_name
+
+			if not orig_colors.has(dict_key):
+				orig_colors[dict_key] = theme.get_color(c_name, type_str)
+
+			theme.set_color(c_name, type_str, ColorUtils.recolor_color(orig_colors[dict_key], shift_data))
+
+	if not theme.has_meta("_orig_colors"):
+		theme.set_meta("_orig_colors", orig_colors)
+
+	var style_types: Array = theme.get_type_list("stylebox")
 	for type_name in style_types:
 		for style_name in theme.get_stylebox_list(type_name):
 			var sb = theme.get_stylebox(style_name, type_name)
 			if sb is StyleBoxFlat:
-				_recolor_stylebox_flat(sb, v_r, v_g, v_b, processed, stats)
+				_recolor_stylebox_flat(sb as StyleBoxFlat, shift_data, processed)
 
-static func _recolor_stylebox_flat(sb, v_r, v_g, v_b, processed, stats):
-	var res_id = sb.get_instance_id()
+static func _recolor_stylebox_flat(sb: StyleBoxFlat, shift_data: Dictionary, processed: Dictionary) -> void:
+	var res_id: int = sb.get_instance_id()
 	if processed.has(res_id):
 		return
 	processed[res_id] = true
-	stats.styleboxes += 1
-	
-	if not sb.has_meta("_orig_bg_color"):
-		sb.set_meta("_orig_bg_color", sb.bg_color)
-	sb.bg_color = ColorUtils.recolor_color(sb.get_meta("_orig_bg_color"), v_r, v_g, v_b)
-	
-	if not sb.has_meta("_orig_border_color"):
-		sb.set_meta("_orig_border_color", sb.border_color)
-	sb.border_color = ColorUtils.recolor_color(sb.get_meta("_orig_border_color"), v_r, v_g, v_b)
-	
-	if not sb.has_meta("_orig_shadow_color"):
-		sb.set_meta("_orig_shadow_color", sb.shadow_color)
-	sb.shadow_color = ColorUtils.recolor_color(sb.get_meta("_orig_shadow_color"), v_r, v_g, v_b)
+
+	if sb.draw_center:
+		if not sb.has_meta("_orig_bg_color"):
+			sb.set_meta("_orig_bg_color", sb.bg_color)
+		sb.bg_color = ColorUtils.recolor_color(sb.get_meta("_orig_bg_color"), shift_data)
+
+	if sb.border_width_left > 0 or sb.border_width_right > 0 or sb.border_width_top > 0 or sb.border_width_bottom > 0:
+		if not sb.has_meta("_orig_border_color"):
+			sb.set_meta("_orig_border_color", sb.border_color)
+		sb.border_color = ColorUtils.recolor_color(sb.get_meta("_orig_border_color"), shift_data)
+
+	if sb.shadow_size > 0:
+		if not sb.has_meta("_orig_shadow_color"):
+			sb.set_meta("_orig_shadow_color", sb.shadow_color)
+		sb.shadow_color = ColorUtils.recolor_color(sb.get_meta("_orig_shadow_color"), shift_data)
