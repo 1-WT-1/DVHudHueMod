@@ -11,6 +11,7 @@ var _last_options_hash: int = 0
 
 var _mod_options: Dictionary = {
 	"color_space": "HSV",
+	"hdr_extraction_mode": "Unclamped",
 	"overlap": 0.0,
 	"lightness_mode": "HDR Multiplier",
 	"master_lightness": 1.0, "master_chroma": 1.0, "master_hue": 0.0,
@@ -46,7 +47,7 @@ func _fetch_and_apply_recolor() -> void:
 
 	if _mod_pointers and "ConfigDriver" in _mod_pointers:
 		var cfg_keys: Array = [
-			"color_space", "overlap", "lightness_mode",
+			"color_space", "hdr_extraction_mode", "overlap", "lightness_mode",
 			"master_lightness", "master_chroma", "master_hue",
 			"r_lightness", "r_chroma", "r_hue",
 			"y_lightness", "y_chroma", "y_hue",

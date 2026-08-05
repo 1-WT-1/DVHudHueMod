@@ -55,6 +55,14 @@ const TRANSLATIONS = {
 			"string": "Select color space algorithm",
 			"version_hash": 855771991
 		},
+		"DVHUDHUE_HDR_EXTRACTION_MODE_NAME": {
+			"string": "HDR Extraction Mode",
+			"version_hash": 1983617609
+		},
+		"DVHUDHUE_HDR_EXTRACTION_MODE_DESC": {
+			"string": "Controls how hue is extracted from HDR colors. Unclamped is default. Clamped prevents hue skewing on intensely bright glowing elements.",
+			"version_hash": 137675396
+		},
 		"DVHUDHUE_OVERLAP_NAME": {
 			"string": "Overlap",
 			"version_hash": 3751615902

@@ -106,6 +106,7 @@ static func get_shift_data(opts: Dictionary) -> Dictionary:
 
 	return {
 		"mode": mode,
+		"hdr_extraction_mode": opts.get("hdr_extraction_mode", "Unclamped"),
 		"mode_int": mode_int,
 		"is_identity": is_identity,
 		"overlap": opts.get("overlap", 0.0) / 100.0,
@@ -170,9 +171,15 @@ static func recolor_color(c: Color, shift_data: Dictionary) -> Color:
 	var max_val: float = c.v
 	var hdr_multiplier: float = 1.0
 	var c_sdr: Color = c
-	if max_val > 1.0:
-		hdr_multiplier = max_val
-		c_sdr = Color(c.r / max_val, c.g / max_val, c.b / max_val, c.a)
+	
+	if shift_data.get("hdr_extraction_mode", "Clamped") == "Clamped":
+		c_sdr = Color(clamp(c.r, 0.0, 1.0), clamp(c.g, 0.0, 1.0), clamp(c.b, 0.0, 1.0), c.a)
+		if max_val > 1.0:
+			hdr_multiplier = max_val
+	else:
+		if max_val > 1.0:
+			hdr_multiplier = max_val
+			c_sdr = Color(c.r / max_val, c.g / max_val, c.b / max_val, c.a)
 
 	if mode_int == 0:
 		var linear_c: Color = to_linear(c_sdr)

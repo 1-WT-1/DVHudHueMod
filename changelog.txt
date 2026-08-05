@@ -1,3 +1,6 @@
+[1.1.0]
+1="* Added HDR Extraction Mode setting (Unclamped / Clamped) for accurate hue calculation on glowing elements"
+
 [1.0.0]
 1="* Optimized mod for better performance"
 2="* Fixed OKLCh color space calculations by properly converting sRGB to Linear RGB."

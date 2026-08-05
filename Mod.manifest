@@ -10,7 +10,7 @@ credits=["kymurk - idea"]
 [version]
 
 version_major=1
-version_minor=0
+version_minor=1
 version_bugfix=0
 
 [tags]
@@ -28,6 +28,14 @@ DVHUDHUE_OPTIONS={
 		"store_method":"string",
 		"options":["HSV", "HSL", "OKHSV", "OKHSL", "OKLCH"],
 		"default":"HSV"
+	},
+	"hdr_extraction_mode":{
+		"name":"DVHUDHUE_HDR_EXTRACTION_MODE_NAME",
+		"description":"DVHUDHUE_HDR_EXTRACTION_MODE_DESC",
+		"type":"option_button",
+		"store_method":"string",
+		"options":["Unclamped", "Clamped"],
+		"default":"Unclamped"
 	},
 	"overlap":{
 		"name":"DVHUDHUE_OVERLAP_NAME",
