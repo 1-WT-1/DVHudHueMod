@@ -1,3 +1,10 @@
+[1.2.0]
+1="* Reduced memory usage of driver files"
+2="* Added blocking HevLib dependency check"
+3="* Optimized ConfigDriver access using typed HevLibPointers"
+4="* Fixed remote scanners not recoloring on Kitsune, CERF, and EIME HUDs"
+5="* Fixed equipment dots on cargo scanners not matching HUD color"
+
 [1.1.0]
 1="* Added HDR Extraction Mode setting (Unclamped / Clamped) for accurate hue calculation on glowing elements"
 

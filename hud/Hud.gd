@@ -3,7 +3,7 @@ extends "res://hud/Hud.gd"
 const HudRecolorer = preload("res://DVHudHueMod/scripts/HudRecolorer.gd")
 const ColorUtils = preload("res://DVHudHueMod/scripts/ColorUtils.gd")
 
-var _mod_pointers: Node = null
+var ConfigDriver:HevLibPointers._ConfigDriver = ModLoader._savedObjects[0].ConfigDriver
 var _subscribed: bool = false
 var _recolor_queued: bool = false
 var _cached_shift_data: Dictionary = {}
@@ -42,10 +42,7 @@ func _queue_recolor() -> void:
 func _fetch_and_apply_recolor() -> void:
 	_recolor_queued = false
 
-	if not _mod_pointers and CurrentGame and CurrentGame.get_tree():
-		_mod_pointers = CurrentGame.get_tree().get_root().get_node_or_null("HevLib~Pointers")
-
-	if _mod_pointers and "ConfigDriver" in _mod_pointers:
+	if ConfigDriver:
 		var cfg_keys: Array = [
 			"color_space", "hdr_extraction_mode", "overlap", "lightness_mode",
 			"master_lightness", "master_chroma", "master_hue",
@@ -59,9 +56,9 @@ func _fetch_and_apply_recolor() -> void:
 
 		for k in cfg_keys:
 			if not _subscribed:
-				_mod_pointers.ConfigDriver.__subscribe_to_setting_change("_on_setting_updated", self, "DVHudHueMod", "DVHUDHUE_OPTIONS", k)
+				ConfigDriver.__subscribe_to_setting_change("_on_setting_updated", self, "DVHudHueMod", "DVHUDHUE_OPTIONS", k)
 			
-			var val = _mod_pointers.ConfigDriver.__get_value("DVHudHueMod", "DVHUDHUE_OPTIONS", k)
+			var val = ConfigDriver.__get_value("DVHudHueMod", "DVHUDHUE_OPTIONS", k)
 			if val != null:
 				_mod_options[k] = val
 		

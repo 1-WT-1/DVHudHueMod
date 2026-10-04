@@ -10,14 +10,12 @@ const EXCLUDED_NODE_NAMES: Array = [
 	"BackBufferCopy",
 	"RingTelescopeView",
 	"CustomViewportContainer",
-	"Video",
-	"Offset"
+	"Video"
 ]
 
 const TELESCOPE_NODE_NAMES: Array = [
 	"RingTelescopeView",
 	"Video",
-	"Offset",
 	"CustomViewportContainer",
 	"EnceladusFeed"
 ]
@@ -34,9 +32,12 @@ static func apply_recolor(hud_root: Node, shift_data: Dictionary) -> void:
 		hud_root.set_meta("_global_processed_resources", global_processed)
 		hud_root.set_meta("_last_shift_hash", current_hash)
 
-	_recolor_node_recursive(hud_root, shift_data, global_processed, false, current_hash)
+	var manifests: Array = []
+	_recolor_node_recursive(hud_root, shift_data, global_processed, false, current_hash, manifests)
+	for m in manifests:
+		_sync_cargo_manifest(m)
 
-static func _recolor_node_recursive(node: Node, shift_data: Dictionary, processed: Dictionary, is_inside_telescope: bool, current_hash: int) -> void:
+static func _recolor_node_recursive(node: Node, shift_data: Dictionary, processed: Dictionary, is_inside_telescope: bool, current_hash: int, manifests: Array) -> void:
 	if not node or not is_instance_valid(node):
 		return
 
@@ -83,15 +84,43 @@ static func _recolor_node_recursive(node: Node, shift_data: Dictionary, processe
 			if node.has_meta("_orig_script_colors"):
 				script_vars = node.get_meta("_orig_script_colors")
 			
+			var script_dicts: Dictionary = {}
+			if node.has_meta("_orig_script_dict_colors"):
+				script_dicts = node.get_meta("_orig_script_dict_colors")
+
 			for p in node.get_property_list():
-				if (p.usage & (PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_EDITOR)) and p.type == TYPE_COLOR and not p.name.begins_with("_") and not p.name in ["modulate", "self_modulate", "color", "default_color"]:
-					var current_c = node.get(p.name)
-					if current_c is Color:
-						var meta_key = "_last_script_color_" + p.name
-						if not script_vars.has(p.name):
-							script_vars[p.name] = current_c
-						elif node.has_meta(meta_key):
-							script_vars[p.name] = ColorUtils.update_orig_color_if_needed(current_c, script_vars[p.name], node.get_meta(meta_key))
+				if (p.usage & (PROPERTY_USAGE_SCRIPT_VARIABLE | PROPERTY_USAGE_EDITOR)) and not p.name.begins_with("_"):
+					if p.type == TYPE_COLOR and not p.name in ["modulate", "self_modulate", "color", "default_color"]:
+						var current_c = node.get(p.name)
+						if current_c is Color:
+							var meta_key = "_last_script_color_" + p.name
+							if not script_vars.has(p.name):
+								script_vars[p.name] = current_c
+							elif node.has_meta(meta_key):
+								script_vars[p.name] = ColorUtils.update_orig_color_if_needed(current_c, script_vars[p.name], node.get_meta(meta_key))
+					elif p.type == TYPE_DICTIONARY:
+						var current_dict = node.get(p.name)
+						if current_dict is Dictionary:
+							var orig_dict: Dictionary = script_dicts.get(p.name, {})
+							var meta_key = "_last_script_dict_" + p.name
+							var last_dict: Dictionary = node.get_meta(meta_key) if node.has_meta(meta_key) else {}
+							var dict_has_color: bool = false
+							for k in current_dict:
+								var val = current_dict[k]
+								if val is Color:
+									dict_has_color = true
+									if not orig_dict.has(k):
+										orig_dict[k] = val
+									elif last_dict.has(k):
+										orig_dict[k] = ColorUtils.update_orig_color_if_needed(val, orig_dict[k], last_dict[k])
+
+							if p.name == "colorOverrides" and ("scanArea" in node or "mineralColor" in node):
+								if not orig_dict.has("CARGO_EQUIPMENT"):
+									orig_dict["CARGO_EQUIPMENT"] = Color(0.0, 1.0, 0.0)
+								dict_has_color = true
+
+							if dict_has_color:
+								script_dicts[p.name] = orig_dict
 			
 			node.set_meta("_orig_script_colors", script_vars)
 
@@ -99,6 +128,21 @@ static func _recolor_node_recursive(node: Node, shift_data: Dictionary, processe
 				var shifted_c = ColorUtils.recolor_color(script_vars[prop_name], shift_data)
 				node.set(prop_name, shifted_c)
 				node.set_meta("_last_script_color_" + prop_name, shifted_c)
+
+			node.set_meta("_orig_script_dict_colors", script_dicts)
+
+			for prop_name in script_dicts:
+				var target_dict = node.get(prop_name)
+				if target_dict is Dictionary:
+					var new_dict = target_dict.duplicate()
+					var last_dict: Dictionary = {}
+					for k in script_dicts[prop_name]:
+						var orig_c: Color = script_dicts[prop_name][k]
+						var shifted_c = ColorUtils.recolor_color(orig_c, shift_data)
+						new_dict[k] = shifted_c
+						last_dict[k] = shifted_c
+					node.set(prop_name, new_dict)
+					node.set_meta("_last_script_dict_" + prop_name, last_dict)
 
 		var is_excluded: bool = is_inside_telescope or is_viewport_texture_rect or (node.name in EXCLUDED_NODE_NAMES) or ("Viewport" in node.name) or (node is ViewportContainer)
 
@@ -126,12 +170,16 @@ static func _recolor_node_recursive(node: Node, shift_data: Dictionary, processe
 				node.self_modulate = shifted_c
 				node.set_meta("_last_self_modulate", shifted_c)
 
+	if "colors" in node and "scanner" in node:
+		manifests.append(node)
+		return
+
 	for i in range(node.get_child_count()):
 		var child = node.get_child(i)
 		if child is Timer or child is AnimationPlayer or child is Tween or child is AudioStreamPlayer or child is AudioStreamPlayer2D or child is AudioStreamPlayer3D:
 			continue
 
-		_recolor_node_recursive(child, shift_data, processed, is_inside_telescope, current_hash)
+		_recolor_node_recursive(child, shift_data, processed, is_inside_telescope, current_hash, manifests)
 
 static func _recolor_theme(theme: Theme, shift_data: Dictionary, processed: Dictionary) -> void:
 	var res_id: int = theme.get_instance_id()
@@ -185,3 +233,19 @@ static func _recolor_stylebox_flat(sb: StyleBoxFlat, shift_data: Dictionary, pro
 		if not sb.has_meta("_orig_shadow_color"):
 			sb.set_meta("_orig_shadow_color", sb.shadow_color)
 		sb.shadow_color = ColorUtils.recolor_color(sb.get_meta("_orig_shadow_color"), shift_data)
+
+static func _sync_cargo_manifest(node: Node) -> void:
+	if not node or not is_instance_valid(node):
+		return
+
+	if "colors" in node and node.get("colors") is Dictionary:
+		var scanner_node = null
+		if "scannerNode" in node and node.scannerNode:
+			scanner_node = node.scannerNode
+		elif "scanner" in node and node.scanner:
+			scanner_node = node.get_node_or_null(node.scanner)
+
+		if scanner_node and "colorOverrides" in scanner_node and scanner_node.colorOverrides is Dictionary:
+			for m in scanner_node.colorOverrides:
+				node.colors[m] = scanner_node.colorOverrides[m]
+
